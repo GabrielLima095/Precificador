@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Precificação de Bolos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Transição suave nas tabelas */
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ec4899;
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+        }
+        .tab-active {
+            background-color: white;
+            color: #db2777;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-pink-50/50 min-h-screen pb-12 text-gray-800">
+
+    <!-- Header / Navbar -->
+    <header class="bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-md mb-4">
+        <div class="max-w-7xl mx-auto px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
+                    <i id="headerIcon" class="fa-solid fa-cake-candles text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold">Precificadora Confeiteira Pro</h1>
+                    <p class="text-pink-100 text-sm">Calcule o custo de bolos, docinhos e defina seu preço final de venda</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="carregarDadosExemplo()" class="bg-rose-700/50 hover:bg-rose-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition border border-pink-300/30">
+                    <i class="fa-solid fa-file-import mr-1"></i> Carregar Exemplo
+                </button>
+                <button onclick="limparTabela()" class="bg-red-500/20 hover:bg-red-500/40 text-white text-sm font-medium px-3 py-2 rounded-lg transition border border-red-300/30">
+                    <i class="fa-solid fa-trash-can"></i> Limpar
+                </button>
+            </div>
+        </div>
+
+        <!-- Abas de Navegação -->
+        <div class="max-w-7xl mx-auto px-4 flex gap-2 border-t border-pink-400/40 pt-2">
+            <button id="tabBolo" onclick="mudarAba('bolo')" class="tab-active flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-sm transition">
+                <i class="fa-solid fa-cake-candles text-lg"></i>
+                <span>Precificação de Bolos</span>
+            </button>
+            <button id="tabDocinho" onclick="mudarAba('docinho')" class="text-white hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-sm transition">
+                <i class="fa-solid fa-cookie-bite text-lg"></i>
+                <span>Precificação de Docinhos</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Coluna Principal: Tabela de Ingredientes (2 Colunas no Desktop) -->
+        <section class="lg:col-span-2 space-y-6">
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
+                <!-- Topo do Card de Ingredientes -->
+                <div class="bg-pink-500 text-white p-4 flex flex-wrap justify-between items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <i id="cardTitleIcon" class="fa-solid fa-list-check text-lg"></i>
+                        <h2 id="cardTitleText" class="font-bold text-lg">Ingredientes da Receita (Bolo)</h2>
+                    </div>
+                    <span id="contadorIngredientes" class="bg-pink-600 text-xs px-2.5 py-1 rounded-full font-semibold">0 itens</span>
+                </div>
+
+                <!-- Tabela de Ingredientes -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-pink-50/80 text-pink-950 text-xs font-semibold uppercase tracking-wider border-b border-pink-100">
+                                <th class="p-3">Ingrediente</th>
+                                <th class="p-3 w-24">Qtd Pacote</th>
+                                <th class="p-3 w-28">R$ Pacote</th>
+                                <th class="p-3">Medida Uso</th>
+                                <th class="p-3 w-24">Uso (Qtd)</th>
+                                <th class="p-3 w-24 text-right">Custo Unit.</th>
+                                <th class="p-3 w-28 text-right">Total (R$)</th>
+                                <th class="p-3 w-12 text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaIngredientes" class="divide-y divide-gray-100 text-sm">
+                            <!-- Linhas inseridas via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Botão Adicionar Linha -->
+                <div class="p-4 bg-gray-50 border-t border-gray-100">
+                    <button onclick="adicionarLinhaIngrediente()" class="w-full md:w-auto bg-pink-500 hover:bg-pink-600 text-white font-medium px-4 py-2 rounded-xl transition shadow-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Adicionar Ingrediente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabela de Referência de Medidas Equivalentes -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                <button onclick="toggleTabelaMedidas()" class="w-full flex items-center justify-between text-left font-semibold text-gray-700">
+                    <span class="flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-ruler-horizontal text-pink-500"></i> 
+                        Tabela de Equivalência de Medidas (g ou ml)
+                    </span>
+                    <i id="iconeToggleMedidas" class="fa-solid fa-chevron-down text-gray-400"></i>
+                </button>
+                <div id="tabelaMedidasDiv" class="mt-4 hidden border-t border-gray-100 pt-3">
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>Xícara de Chá:</strong> 240 g/ml</div>
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>1/2 Xícara:</strong> 120 g/ml</div>
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>1/3 Xícara:</strong> 80 g/ml</div>
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>1/4 Xícara:</strong> 60 g/ml</div>
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>2/3 Xícara:</strong> 160 g/ml</div>
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>3/4 Xícara:</strong> 180 g/ml</div>
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>Colher de Sopa:</strong> 15 g/ml</div>
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>Colher de Chá:</strong> 5 g/ml</div>
+                        <div class="p-2 bg-pink-50 rounded-lg border border-pink-100"><strong>g / ml:</strong> 1 g/ml</div>
+                        <div class="p-2 bg-rose-50 rounded-lg border border-rose-100 col-span-2 md:col-span-3 text-rose-900">
+                            * <strong>Caixa / Lata Completa:</strong> Calcula o preço proporcional direto por caixa/lata usada.<br>
+                            * <strong>Horas de Forno (Gás):</strong> Aplica fator de consumo de gás por hora.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Coluna Lateral: Resumo de Custos e Formação de Preço de Venda -->
+        <section class="space-y-6">
+
+            <!-- Card de Resumo de Custos -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 space-y-4">
+                <h2 class="font-bold text-gray-800 text-lg border-b pb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-pink-500"></i> Resumo de Precificação
+                </h2>
+
+                <!-- Total Ingredientes -->
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-gray-600 text-sm">Custo dos Ingredientes:</span>
+                    <span id="custoIngredientesTotal" class="font-bold text-lg text-gray-800">R$ 0,00</span>
+                </div>
+
+                <!-- Despesas Adicionais (Embalagens, Forminhas, Granulados extras, etc) -->
+                <div>
+                    <label id="labelEmbalagem" class="block text-xs font-semibold text-gray-600 mb-1">Outros Custos (Embalagem, fita, etc.):</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-gray-400 text-sm">R$</span>
+                        <input type="number" id="custoEmbalagem" value="0.00" step="0.50" min="0" oninput="calcularPrecoVenda()" class="w-full pl-9 pr-3 py-2 border rounded-xl text-sm font-medium">
+                    </div>
+                </div>
+
+                <!-- Margem para Custos Fixos (Luz, Água, Detergente, etc) -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Custos Fixos / Mão de obra (%):</label>
+                    <div class="relative">
+                        <input type="number" id="porcentagemCustosFixos" value="10" step="1" min="0" oninput="calcularPrecoVenda()" class="w-full pl-3 pr-8 py-2 border rounded-xl text-sm font-medium">
+                        <span class="absolute right-3 top-2.5 text-gray-400 text-sm">%</span>
+                    </div>
+                    <span class="text-[11px] text-gray-400">Recomendado: 10% a 20% para cobrir luz, água e desgaste.</span>
+                </div>
+
+                <!-- Custo Total de Produção -->
+                <div class="bg-rose-50 p-3 rounded-xl border border-rose-200 flex justify-between items-center">
+                    <span class="text-rose-900 font-medium text-sm">Custo Total de Produção:</span>
+                    <span id="custoTotalProducao" class="font-extrabold text-rose-900 text-lg">R$ 0,00</span>
+                </div>
+
+                <hr class="my-2">
+
+                <!-- Definir Margem de Lucro -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Margem de Lucro Desejada (%):</label>
+                    <div class="flex items-center gap-2">
+                        <input type="range" id="sliderLucro" min="0" max="300" value="100" oninput="sincronizarLucro('slider')" class="w-full accent-pink-500">
+                        <input type="number" id="inputLucro" value="100" min="0" oninput="sincronizarLucro('input')" class="w-20 p-1.5 border rounded-lg text-center text-sm font-bold">
+                        <span class="text-sm font-bold text-gray-600">%</span>
+                    </div>
+                </div>
+
+                <!-- Sugestão Preço de Venda -->
+                <div class="bg-gradient-to-br from-pink-500 to-rose-600 text-white p-4 rounded-xl shadow-md text-center space-y-1">
+                    <span class="text-xs uppercase tracking-wide opacity-90">Preço de Venda Sugerido (Receita)</span>
+                    <div id="precoVendaSugerido" class="text-3xl font-black">R$ 0,00</div>
+                    <div class="text-xs text-pink-100 flex justify-between px-2 pt-2 border-t border-pink-400/30">
+                        <span>Lucro Bruto:</span>
+                        <span id="lucroEmReais" class="font-bold">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- Rendimento da Receita (Painel Dinâmico Bolo x Docinho) -->
+                <!-- ABA BOLO: Rendimento em Fatias -->
+                <div id="painelRendimentoBolo" class="pt-2 border-t border-gray-100">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Rendimento do Bolo (Fatias):</label>
+                    <input type="number" id="rendimentoBolo" value="12" min="1" oninput="calcularPrecoVenda()" class="w-full p-2 border rounded-xl text-sm font-medium">
+                    <div class="flex justify-between items-center mt-2 text-xs text-gray-600 font-medium bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                        <span>Preço sugerido por fatia:</span>
+                        <span id="precoPorFatia" class="font-bold text-pink-600 text-sm">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- ABA DOCINHO: Rendimento por Gramas / Tamanho -->
+                <div id="painelRendimentoDocinho" class="pt-2 border-t border-gray-100 hidden space-y-3">
+                    <div class="bg-pink-50/70 p-3 rounded-xl border border-pink-100 space-y-3">
+                        <h3 class="text-xs font-bold text-pink-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-scale-balanced"></i> Rendimento de Brigadeiros / Docinhos
+                        </h3>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Peso Total da Massa Pronta (g):</label>
+                            <input type="number" id="pesoMassaTotal" value="500" step="5" min="1" oninput="calcularPrecoVenda()" class="w-full p-2 border rounded-xl text-sm font-medium bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">Peso por Docinho (g):</label>
+                            <div class="flex gap-2">
+                                <input type="number" id="pesoDocinhoUnidade" value="15" step="1" min="1" oninput="calcularPrecoVenda()" class="w-full p-2 border rounded-xl text-sm font-medium bg-white">
+                                <span class="text-xs bg-gray-100 border p-2 rounded-xl text-gray-500 font-medium self-center">g/un</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resultados de Docinhos -->
+                    <div class="space-y-2 text-xs font-medium">
+                        <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                            <span class="text-gray-600">Total de Docinhos Rendidos:</span>
+                            <span id="qtdTotalDocinhos" class="font-bold text-gray-800 text-sm">0 un</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                            <span class="text-gray-600">Preço por Unidade (1 docinho):</span>
+                            <span id="precoPorDocinho" class="font-bold text-pink-600 text-sm">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-pink-100/60 p-2.5 rounded-lg border border-pink-200 text-pink-950">
+                            <span class="font-semibold">Preço por Cento (100 docinhos):</span>
+                            <span id="precoCentoDocinho" class="font-extrabold text-pink-700 text-base">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Tabela de equivalência
+        const EQUIVALENCIAS = {
+            "Xícara de Chá": 240,
+            "1/2 Xícara (ou 2/4)": 120,
+            "1/3 Xícara": 80,
+            "1/4 Xícara": 60,
+            "2/3 Xícara": 160,
+            "3/4 Xícara": 180,
+            "Colher de Sopa": 15,
+            "Colher de Chá": 5,
+            "g / ml": 1,
+            "Caixa / Lata Completa": "CAIXA", 
+            "Horas de Forno (Gás)": "FORNO"   
+        };
+
+        // Dados Iniciais para Bolos
+        const DADOS_EXEMPLO_BOLO = [
+            { ingrediente: "Leite Ninho", qtdPacote: 575, valorPacote: 37.00, medida: "Colher de Sopa", uso: 8 },
+            { ingrediente: "Margarina", qtdPacote: 1000, valorPacote: 24.00, medida: "Colher de Sopa", uso: 6 },
+            { ingrediente: "Chocolate em pó 50%", qtdPacote: 200, valorPacote: 20.00, medida: "Colher de Sopa", uso: 8 },
+            { ingrediente: "Leite condensado", qtdPacote: 395, valorPacote: 7.39, medida: "Caixa / Lata Completa", uso: 4 },
+            { ingrediente: "Creme de leite", qtdPacote: 200, valorPacote: 5.00, medida: "Caixa / Lata Completa", uso: 4 },
+            { ingrediente: "Leite integral", qtdPacote: 1000, valorPacote: 6.19, medida: "Xícara de Chá", uso: 1 },
+            { ingrediente: "Farinha de trigo", qtdPacote: 1000, valorPacote: 4.20, medida: "Xícara de Chá", uso: 2.5 },
+            { ingrediente: "Chantilly", qtdPacote: 500, valorPacote: 18.00, medida: "g / ml", uso: 500 },
+            { ingrediente: "Ovos", qtdPacote: 30, valorPacote: 16.00, medida: "g / ml", uso: 4 },
+            { ingrediente: "Açúcar", qtdPacote: 1000, valorPacote: 16.00, medida: "Xícara de Chá", uso: 1.5 },
+            { ingrediente: "Fermento em Po", qtdPacote: 250, valorPacote: 15.00, medida: "Colher de Sopa", uso: 1 },
+            { ingrediente: "Essencia de baunilha", qtdPacote: 30, valorPacote: 6.00, medida: "Colher de Chá", uso: 1 },
+            { ingrediente: "Gás de cozinha", qtdPacote: 13, valorPacote: 110.00, medida: "Horas de Forno (Gás)", uso: 2 }
+        ];
+
+        // Dados Iniciais para Docinhos (Brigadeiro Gourmet)
+        const DADOS_EXEMPLO_DOCINHO = [
+            { ingrediente: "Leite condensado", qtdPacote: 395, valorPacote: 7.39, medida: "Caixa / Lata Completa", uso: 2 },
+            { ingrediente: "Creme de leite", qtdPacote: 200, valorPacote: 5.00, medida: "Caixa / Lata Completa", uso: 1 },
+            { ingrediente: "Cacau em Pó 100%", qtdPacote: 200, valorPacote: 18.00, medida: "Colher de Sopa", uso: 4 },
+            { ingrediente: "Manteiga sem sal", qtdPacote: 200, valorPacote: 12.00, medida: "Colher de Sopa", uso: 2 },
+            { ingrediente: "Granulado Gourmet", qtdPacote: 500, valorPacote: 25.00, medida: "g / ml", uso: 150 },
+            { ingrediente: "Forminhas de Papel (nº 5)", qtdPacote: 100, valorPacote: 4.50, medida: "g / ml", uso: 50 },
+            { ingrediente: "Gás de cozinha", qtdPacote: 13, valorPacote: 110.00, medida: "Horas de Forno (Gás)", uso: 0.5 }
+        ];
+
+        let modoAtual = 'bolo'; // 'bolo' ou 'docinho'
+        let listaIngredientes = [];
+
+        // Inicialização
+        window.onload = function() {
+            carregarDadosExemplo();
+        };
+
+        function mudarAba(modo) {
+            modoAtual = modo;
+            
+            const tabBolo = document.getElementById('tabBolo');
+            const tabDocinho = document.getElementById('tabDocinho');
+            const painelBolo = document.getElementById('painelRendimentoBolo');
+            const painelDocinho = document.getElementById('painelRendimentoDocinho');
+            const cardTitleText = document.getElementById('cardTitleText');
+            const cardTitleIcon = document.getElementById('cardTitleIcon');
+            const headerIcon = document.getElementById('headerIcon');
+            const labelEmbalagem = document.getElementById('labelEmbalagem');
+
+            if (modo === 'bolo') {
+                tabBolo.className = 'tab-active flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-sm transition';
+                tabDocinho.className = 'text-white hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-sm transition';
+                painelBolo.classList.remove('hidden');
+                painelDocinho.classList.add('hidden');
+                cardTitleText.innerText = 'Ingredientes da Receita (Bolo)';
+                cardTitleIcon.className = 'fa-solid fa-cake-candles text-lg';
+                headerIcon.className = 'fa-solid fa-cake-candles text-3xl';
+                labelEmbalagem.innerText = 'Outros Custos (Bandeija, Caixa, Fita):';
+            } else {
+                tabDocinho.className = 'tab-active flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-sm transition';
+                tabBolo.className = 'text-white hover:bg-white/10 flex items-center gap-2 px-5 py-2.5 rounded-t-xl text-sm transition';
+                painelDocinho.classList.remove('hidden');
+                painelBolo.classList.add('hidden');
+                cardTitleText.innerText = 'Ingredientes da Receita (Docinhos / Brigadeiro)';
+                cardTitleIcon.className = 'fa-solid fa-cookie-bite text-lg';
+                headerIcon.className = 'fa-solid fa-cookie-bite text-3xl';
+                labelEmbalagem.innerText = 'Outros Custos (Caixa de Entrega, Forminhas):';
+            }
+
+            carregarDadosExemplo();
+        }
+
+        function toggleTabelaMedidas() {
+            const div = document.getElementById('tabelaMedidasDiv');
+            const icone = document.getElementById('iconeToggleMedidas');
+            div.classList.toggle('hidden');
+            icone.classList.toggle('rotate-180');
+        }
+
+        function carregarDadosExemplo() {
+            if (modoAtual === 'bolo') {
+                listaIngredientes = JSON.parse(JSON.stringify(DADOS_EXEMPLO_BOLO));
+            } else {
+                listaIngredientes = JSON.parse(JSON.stringify(DADOS_EXEMPLO_DOCINHO));
+            }
+            renderizarTabela();
+        }
+
+        function limparTabela() {
+            listaIngredientes = [];
+            renderizarTabela();
+        }
+
+        function adicionarLinhaIngrediente() {
+            listaIngredientes.push({
+                ingrediente: "Novo Ingrediente",
+                qtdPacote: 1000,
+                valorPacote: 10.00,
+                medida: "g / ml",
+                uso: 100
+            });
+            renderizarTabela();
+        }
+
+        function removerIngrediente(index) {
+            listaIngredientes.splice(index, 1);
+            renderizarTabela();
+        }
+
+        function atualizarCampo(index, campo, valor) {
+            if (campo === 'ingrediente' || campo === 'medida') {
+                listaIngredientes[index][campo] = valor;
+            } else {
+                listaIngredientes[index][campo] = parseFloat(valor) || 0;
+            }
+            calcularEAtualizarLinha(index);
+            calcularTotais();
+        }
+
+        function calcularValoresIngrediente(item) {
+            const { qtdPacote, valorPacote, medida, uso } = item;
+
+            if (!qtdPacote || qtdPacote <= 0) return { custoUnitario: 0, total: 0 };
+
+            let custoUnitario = 0;
+            let total = 0;
+
+            if (medida === "Horas de Forno (Gás)") {
+                custoUnitario = (valorPacote / qtdPacote) * 0.225;
+                total = uso * custoUnitario;
+            } else {
+                custoUnitario = valorPacote / qtdPacote;
+
+                if (medida === "Caixa / Lata Completa") {
+                    total = uso * valorPacote;
+                } else {
+                    const equivalencia = EQUIVALENCIAS[medida] || 1;
+                    total = uso * equivalencia * custoUnitario;
+                }
+            }
+
+            return { custoUnitario, total };
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('tabelaIngredientes');
+            tbody.innerHTML = '';
+
+            listaIngredientes.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-pink-50/40 transition border-b border-gray-100";
+
+                const { custoUnitario, total } = calcularValoresIngrediente(item);
+
+                tr.innerHTML = `
+                    <td class="p-2">
+                        <input type="text" value="${item.ingrediente}" onchange="atualizarCampo(${index}, 'ingrediente', this.value)" class="w-full p-1.5 border rounded-lg font-medium text-gray-700 text-sm">
+                    </td>
+                    <td class="p-2">
+                        <input type="number" step="any" value="${item.qtdPacote}" oninput="atualizarCampo(${index}, 'qtdPacote', this.value)" class="w-full p-1.5 border rounded-lg text-sm text-center">
+                    </td>
+                    <td class="p-2">
+                        <input type="number" step="any" value="${item.valorPacote}" oninput="atualizarCampo(${index}, 'valorPacote', this.value)" class="w-full p-1.5 border rounded-lg text-sm text-center">
+                    </td>
+                    <td class="p-2">
+                        <select onchange="atualizarCampo(${index}, 'medida', this.value)" class="w-full p-1.5 border rounded-lg text-sm bg-white">
+                            ${Object.keys(EQUIVALENCIAS).map(m => `
+                                <option value="${m}" ${item.medida === m ? 'selected' : ''}>${m}</option>
+                            `).join('')}
+                        </select>
+                    </td>
+                    <td class="p-2">
+                        <input type="number" step="any" value="${item.uso}" oninput="atualizarCampo(${index}, 'uso', this.value)" class="w-full p-1.5 border rounded-lg text-sm text-center font-semibold text-pink-600">
+                    </td>
+                    <td class="p-2 text-right font-mono text-gray-500 text-xs" id="custoUnitario-${index}">
+                        R$ ${custoUnitario.toFixed(2).replace('.', ',')}
+                    </td>
+                    <td class="p-2 text-right font-mono font-bold text-gray-800 text-sm" id="totalLine-${index}">
+                        R$ ${total.toFixed(2).replace('.', ',')}
+                    </td>
+                    <td class="p-2 text-center">
+                        <button onclick="removerIngrediente(${index})" class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('contadorIngredientes').innerText = `${listaIngredientes.length} itens`;
+            calcularTotais();
+        }
+
+        function calcularEAtualizarLinha(index) {
+            const item = listaIngredientes[index];
+            const { custoUnitario, total } = calcularValoresIngrediente(item);
+
+            const elUnitario = document.getElementById(`custoUnitario-${index}`);
+            const elTotal = document.getElementById(`totalLine-${index}`);
+
+            if (elUnitario) elUnitario.innerText = `R$ ${custoUnitario.toFixed(2).replace('.', ',')}`;
+            if (elTotal) elTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        }
+
+        function sincronizarLucro(origem) {
+            const slider = document.getElementById('sliderLucro');
+            const input = document.getElementById('inputLucro');
+
+            if (origem === 'slider') {
+                input.value = slider.value;
+            } else {
+                slider.value = input.value;
+            }
+            calcularPrecoVenda();
+        }
+
+        function calcularTotais() {
+            let totalIngredientes = 0;
+
+            listaIngredientes.forEach(item => {
+                const { total } = calcularValoresIngrediente(item);
+                totalIngredientes += total;
+            });
+
+            document.getElementById('custoIngredientesTotal').innerText = `R$ ${totalIngredientes.toFixed(2).replace('.', ',')}`;
+            calcularPrecoVenda();
+        }
+
+        function calcularPrecoVenda() {
+            let totalIngredientes = 0;
+            listaIngredientes.forEach(item => {
+                const { total } = calcularValoresIngrediente(item);
+                totalIngredientes += total;
+            });
+
+            const custoEmbalagem = parseFloat(document.getElementById('custoEmbalagem').value) || 0;
+            const pctCustosFixos = parseFloat(document.getElementById('porcentagemCustosFixos').value) || 0;
+            const pctLucro = parseFloat(document.getElementById('inputLucro').value) || 0;
+
+            const valorCustosFixos = totalIngredientes * (pctCustosFixos / 100);
+            const custoTotalProducao = totalIngredientes + valorCustosFixos + custoEmbalagem;
+
+            const lucroReais = custoTotalProducao * (pctLucro / 100);
+            const precoVendaTotal = custoTotalProducao + lucroReais;
+
+            document.getElementById('custoTotalProducao').innerText = `R$ ${custoTotalProducao.toFixed(2).replace('.', ',')}`;
+            document.getElementById('precoVendaSugerido').innerText = `R$ ${precoVendaTotal.toFixed(2).replace('.', ',')}`;
+            document.getElementById('lucroEmReais').innerText = `R$ ${lucroReais.toFixed(2).replace('.', ',')}`;
+
+            if (modoAtual === 'bolo') {
+                const rendimento = parseInt(document.getElementById('rendimentoBolo').value) || 1;
+                const precoPorFatia = precoVendaTotal / rendimento;
+                document.getElementById('precoPorFatia').innerText = `R$ ${precoPorFatia.toFixed(2).replace('.', ',')}`;
+            } else {
+                const pesoMassa = parseFloat(document.getElementById('pesoMassaTotal').value) || 1;
+                const pesoDocinho = parseFloat(document.getElementById('pesoDocinhoUnidade').value) || 15;
+                
+                const qtdDocinhos = Math.floor(pesoMassa / pesoDocinho);
+                const precoPorDocinho = qtdDocinhos > 0 ? (precoVendaTotal / qtdDocinhos) : 0;
+                const precoCento = precoPorDocinho * 100;
+
+                document.getElementById('qtdTotalDocinhos').innerText = `${qtdDocinhos} un`;
+                document.getElementById('precoPorDocinho').innerText = `R$ ${precoPorDocinho.toFixed(2).replace('.', ',')}`;
+                document.getElementById('precoCentoDocinho').innerText = `R$ ${precoCento.toFixed(2).replace('.', ',')}`;
+            }
+        }
+    </script>
+</body>
+</html>
